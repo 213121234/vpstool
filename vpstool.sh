@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# Linux工具箱脚本 by.wuying
-# 功能：IP质量检测、一键融合怪、网络加速BBR、一键安装哪吒探针(面板)、一键安装哪吒探针(被控)、一键安装网盘程序(AList)、一键修改DNS、通过iptables进行基本的攻击缓解
+# Linux工具箱脚本
+# 功能：IP质量检测、一键融合怪、网络加速BBR、一键安装哪吒探针(面板)、一键安装哪吒探针(被控)、一键安装网盘程序(AList)、一键修改DNS、通过iptables进行基本的攻击缓解、修改IPv4/IPv6优先级
 
+# 检查用户是否是root用户
 if [[ $EUID -ne 0 ]]; then
    echo "此脚本必须以root身份运行" 
    exit 1
 fi
 
+# 公告
 announcement() {
     echo -e "\033[31mVPSTool v0.01\033[0m"
-    echo -e "\033[31m该脚本仅收集网络公开的脚本 功能非原创\033[0m"
-    echo -e "\033[31m在线求赞助商QAQ\033[0m"
+    echo -e "\033[31m该脚本仅收集网络公开的脚本 非原创\033[0m"
     echo ""
 }
 
@@ -150,6 +151,33 @@ mitigate_attacks() {
     update_usage_count
 }
 
+# 修改IPv4/IPv6优先级
+change_ip_priority() {
+    echo "请选择优先级设置:"
+    echo "1. IPv4优先"
+    echo "2. IPv6优先"
+    read -p "输入选项 (1-2): " ip_choice
+    case $ip_choice in
+        1) set_ipv4_priority ;;
+        2) set_ipv6_priority ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+    update_usage_count
+}
+
+set_ipv4_priority() {
+    echo "设置IPv4优先..."
+    sudo sed -i '/^#precedence ::ffff:0:0\/96  100/s/^#//' /etc/gai.conf
+    sudo sed -i '/^precedence ::ffff:0:0\/96  100/!s/^/precedence ::ffff:0:0\/96  100\n/' /etc/gai.conf
+    echo "已设置为IPv4优先"
+}
+
+set_ipv6_priority() {
+    echo "设置IPv6优先..."
+    sudo sed -i '/^precedence ::ffff:0:0\/96  100/s/^/#/' /etc/gai.conf
+    echo "已设置为IPv6优先"
+}
+
 # 菜单
 show_menu() {
     echo -e "\033[31m请选择一个功能:\033[0m"
@@ -161,9 +189,10 @@ show_menu() {
     echo "6. 一键安装网盘程序(AList)"
     echo "7. 一键修改DNS"
     echo "8. 通过iptables进行基本的攻击缓解"
-    echo "9. 退出"
+    echo "9. 修改IPv4/IPv6优先级"
+    echo "10. 退出"
     display_usage_count
-    read -p "输入选项 (1-9): " choice
+    read -p "输入选项 (1-10): " choice
     case $choice in
         1) ip_quality_check ;;
         2) merge_monster ;;
@@ -173,7 +202,8 @@ show_menu() {
         6) install_netdisk ;;
         7) change_dns ;;
         8) mitigate_attacks ;;
-        9) exit 0 ;;
+        9) change_ip_priority ;;
+        10) exit 0 ;;
         *) echo -e "\033[31m无效选项\033[0m" ;;
     esac
 }
