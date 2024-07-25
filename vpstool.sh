@@ -13,7 +13,7 @@ fi
 announcement() {
     echo -e "\033[31mVPSTool v0.01\033[0m"
     echo -e "\033[31m该脚本仅收集网络公开的脚本 非原创\033[0m"
-    echo -e "\033[31m赞助商;VKVM:www.vkvm.info\033[0m"
+    echo -e "\033[31m赞助商:VKVM:www.vkvm.info\033[0m"
     echo ""
 }
 
