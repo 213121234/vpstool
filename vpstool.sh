@@ -67,14 +67,61 @@ vps_network_menu() {
     echo "1. 网络加速BBR"
     echo "2. 一键修改DNS"
     echo "3. IP管理"
-    read -p "输入选项 (1-3): " choice
+    echo "4. 磁盘管理"
+    read -p "输入选项 (1-4): " choice
     case $choice in
         1) enable_bbr ;;
         2) change_dns_menu ;;
         3) ip_management_menu ;;
+        4) disk_management_menu ;;
         *) echo -e "\033[31m无效选项\033[0m" ;;
     esac
 }
+# 磁盘管理子菜单
+disk_management_menu() {
+    echo "请选择一个操作:"
+    echo "1. 磁盘分区"
+    echo "2. 磁盘备份"
+    read -p "输入选项 (1-2): " disk_choice
+    case $disk_choice in
+        1) partition_disk ;;
+        2) backup_disk ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+}
+
+# 磁盘分区
+partition_disk() {
+    read -p "输入要分区的磁盘名 (例如 /dev/sdb): " disk
+    echo "开始磁盘分区..."
+    (
+        echo o # 创建一个新的空 DOS 分区表
+        echo n # 添加新分区
+        echo p # 主分区
+        echo 1 # 分区号
+        echo   # 默认 - 第一个扇区
+        echo +500M # 分区大小
+        echo n # 添加新分区
+        echo p # 主分区
+        echo 2 # 分区号
+        echo   # 默认 - 第一个扇区
+        echo   # 默认 - 最后一个扇区
+        echo w # 写入分区表并退出
+    ) | sudo fdisk $disk
+    echo "磁盘分区完成"
+    update_usage_count
+}
+
+# 磁盘备份
+backup_disk() {
+    read -p "输入要备份的源磁盘名 (例如 /dev/sda): " source_disk
+    read -p "输入备份文件路径 (例如 /backup/sda.img): " backup_path
+    echo "开始磁盘备份..."
+    sudo dd if=$source_disk of=$backup_path bs=4M status=progress
+    echo "磁盘备份完成"
+    update_usage_count
+}
+
 # IP管理子菜单
 ip_management_menu() {
     echo "请选择一个操作:"
