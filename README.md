@@ -1,4 +1,4 @@
-本脚本无原创功能 只是整理了部分公开的脚本</br>
+本脚本无原创 功能 只是整理了部分公开的脚本</br>
 各位大佬轻点喷 求star 求star</br>
 
 支持OS/Platform：Ubuntu | Debian | Linux Mint | Fedora | Red Hat Enterprise Linux (RHEL) | CentOS | Arch Linux | Manjaro | Alpine Linux </br>
