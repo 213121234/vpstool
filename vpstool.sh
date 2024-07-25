@@ -1,89 +1,185 @@
 #!/bin/bash
 
-# Linux工具箱脚本
-# 功能：IP质量检测、一键融合怪、网络加速BBR、一键安装哪吒探针、一键安装网盘程序、一键跑路
+# Linux工具箱脚本 by.wuying
+# 功能：IP质量检测、一键融合怪、网络加速BBR、一键安装哪吒探针(面板)、一键安装哪吒探针(被控)、一键安装网盘程序(AList)、一键修改DNS、通过iptables进行基本的攻击缓解
 
-# 检查用户是否是root用户
 if [[ $EUID -ne 0 ]]; then
    echo "此脚本必须以root身份运行" 
    exit 1
 fi
 
+announcement() {
+    echo -e "\033[31mVPSTool v0.01\033[0m"
+    echo -e "\033[31m该脚本仅收集网络公开的脚本 功能非原创\033[0m"
+    echo -e "\033[31m在线求赞助商QAQ\033[0m"
+    echo ""
+}
+
+# 今日使用次数统计
+update_usage_count() {
+    local count_file="/tmp/tool_usage_count"
+    local today=$(date +%Y-%m-%d)
+
+    if [ ! -f "$count_file" ]; then
+        echo "$today 1" > "$count_file"
+    else
+        local last_date=$(awk '{print $1}' "$count_file")
+        local count=$(awk '{print $2}' "$count_file")
+
+        if [ "$today" == "$last_date" ]; then
+            count=$((count + 1))
+            echo "$today $count" > "$count_file"
+        else
+            echo "$today 1" > "$count_file"
+        fi
+    fi
+}
+
+display_usage_count() {
+    local count_file="/tmp/tool_usage_count"
+    if [ -f "$count_file" ]; then
+        local count=$(awk '{print $2}' "$count_file")
+        echo -e "\033[32m本工具今日使用次数: $count\033[0m"
+    else
+        echo -e "\033[32m本工具今日使用次数: 0\033[0m"
+    fi
+}
+
 # IP质量检测
 ip_quality_check() {
     echo "开始IP质量检测..."
-    # 下载并执行 IPQuality 脚本
-    if [ ! -d "./IPQuality" ]; then
-        git clone https://github.com/xykt/IPQuality.git
-    fi
-    cd IPQuality || exit
-    chmod +x ip_quality_check.sh
-    ./ip_quality_check.sh
-    cd ..
+    bash <(curl -Ls IP.Check.Place)
+    update_usage_count
 }
 
-# 一键融合怪（示例功能）
+# 一键融合怪
 merge_monster() {
     echo "开始一键融合怪..."
-    # 这里添加融合怪的实现代码
+    curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh
+    chmod +x ecs.sh
+    bash ecs.sh
     echo "融合怪完成"
+    update_usage_count
 }
 
 # 网络加速BBR
 enable_bbr() {
     echo "启用网络加速BBR..."
-    modprobe tcp_bbr
-    echo "tcp_bbr" >> /etc/modules-load.d/modules.conf
-    sysctl -w net.core.default_qdisc=fq
-    sysctl -w net.ipv4.tcp_congestion_control=bbr
+    echo 'net.core.default_qdisc=fq' | sudo tee -a /etc/sysctl.conf
+    echo 'net.ipv4.tcp_congestion_control=bbr' | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
     echo "BBR加速已启用"
+    # 验证BBR是否启用
+    sysctl net.ipv4.tcp_congestion_control
+    lsmod | grep bbr
+    update_usage_count
 }
 
-# 一键安装哪吒探针
-install_nezha() {
-    echo "开始安装哪吒探针..."
-    # 这里添加安装哪吒探针的代码
-    echo "哪吒探针安装完成"
+# 一键安装哪吒探针(面板)
+install_nezha_panel() {
+    echo "开始安装哪吒探针(面板)..."
+    curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh
+    chmod +x nezha.sh
+    sudo ./nezha.sh
+    echo "哪吒探针(面板)安装完成"
+    update_usage_count
 }
 
-# 一键安装网盘程序
+# 一键安装哪吒探针(被控)
+install_nezha_agent() {
+    echo "开始安装哪吒探针(被控)..."
+    curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh
+    chmod +x nezha.sh
+    sudo ./nezha.sh
+    echo "哪吒探针(被控)安装完成"
+    update_usage_count
+}
+
+# 一键安装网盘程序(AList)
 install_netdisk() {
-    echo "开始安装网盘程序..."
-    # 这里添加安装网盘程序的代码，例如Nextcloud
-    echo "网盘程序安装完成"
+    echo "开始安装网盘程序(AList)..."
+    curl -fsSL "https://alist.nn.ci/v3.sh" | bash -s install
+    echo "网盘程序(AList)安装完成"
+    update_usage_count
 }
 
-# 一键跑路
-run_away() {
-    echo "执行一键跑路..."
-    # 这里可以添加删除敏感数据或停止服务的代码
-    echo "跑路完成"
+# 一键修改DNS
+change_dns() {
+    echo "请选择一个DNS:"
+    echo "1. 修改为 1.1.1.1"
+    echo "2. 修改为 8.8.8.8"
+    echo "3. VKVM HK 15.235.198.195"
+    echo "4. VKVM US 51.79.74.126"
+    echo "5. VKVM SG 139.99.42.249"
+    read -p "输入选项 (1-5): " dns_choice
+    case $dns_choice in
+        1) set_dns "1.1.1.1" ;;
+        2) set_dns "8.8.8.8" ;;
+        3) set_dns "15.235.198.195" ;;
+        4) set_dns "51.79.74.126" ;;
+        5) set_dns "139.99.42.249" ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+    update_usage_count
+}
+
+set_dns() {
+    local dns=$1
+    echo "nameserver $dns" | sudo tee /etc/resolv.conf > /dev/null
+    echo "DNS 已修改为 $dns"
+}
+
+# 通过iptables进行基本的攻击缓解
+mitigate_attacks() {
+    echo "开始通过iptables进行基本的攻击缓解..."
+    # 限制SSH连接速率
+    sudo iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+    sudo iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 10 -j DROP
+
+    # 丢弃ping请求
+    sudo iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+
+    # 防止SYN洪泛攻击
+    sudo iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+
+    # 防止端口扫描
+    sudo iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+    sudo iptables -A INPUT -p tcp --tcp-flags ALL ALL -j DROP
+
+    echo "基本攻击缓解规则已应用"
+    update_usage_count
 }
 
 # 菜单
 show_menu() {
-    echo "请选择一个功能:"
+    echo -e "\033[31m请选择一个功能:\033[0m"
     echo "1. IP质量检测"
     echo "2. 一键融合怪"
     echo "3. 网络加速BBR"
-    echo "4. 一键安装哪吒探针"
-    echo "5. 一键安装网盘程序"
-    echo "6. 一键跑路"
-    echo "7. 退出"
-    read -p "输入选项 (1-7): " choice
+    echo "4. 一键安装哪吒探针(面板)"
+    echo "5. 一键安装哪吒探针(被控)"
+    echo "6. 一键安装网盘程序(AList)"
+    echo "7. 一键修改DNS"
+    echo "8. 通过iptables进行基本的攻击缓解"
+    echo "9. 退出"
+    display_usage_count
+    read -p "输入选项 (1-9): " choice
     case $choice in
         1) ip_quality_check ;;
         2) merge_monster ;;
         3) enable_bbr ;;
-        4) install_nezha ;;
-        5) install_netdisk ;;
-        6) run_away ;;
-        7) exit 0 ;;
-        *) echo "无效选项" ;;
+        4) install_nezha_panel ;;
+        5) install_nezha_agent ;;
+        6) install_netdisk ;;
+        7) change_dns ;;
+        8) mitigate_attacks ;;
+        9) exit 0 ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
     esac
 }
 
 # 主循环
 while true; do
+    announcement
     show_menu
 done
