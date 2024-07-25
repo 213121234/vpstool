@@ -7,6 +7,6 @@
 
 食用方法: </br>
 git clone https://github.com/213121234/vpstool.git && cd vpstool && chmod +x vpstool.sh && sudo ./vpstool.sh
-
-
+或 
+bash <(curl -Ls https://raw.githubusercontent.com/213121234/vpstool/main/vpstool.sh)
 赞助商列表: VKVM
