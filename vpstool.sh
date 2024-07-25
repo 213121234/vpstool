@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Linux工具箱脚本
-# 功能：IP质量检测、一键融合怪、网络加速BBR、一键安装哪吒探针(面板)、一键安装哪吒探针(被控)、一键安装网盘程序(AList)、一键修改DNS、通过iptables进行基本的攻击缓解、修改IPv4/IPv6优先级
+# 功能：VPS体检区、VPS网络区、VPS软件区、VPS安全区
 
 # 检查用户是否是root用户
 if [[ $EUID -ne 0 ]]; then
@@ -13,7 +13,6 @@ fi
 announcement() {
     echo -e "\033[31mVPSTool v0.01\033[0m"
     echo -e "\033[31m该脚本仅收集网络公开的脚本 非原创\033[0m"
-    echo -e "\033[31m赞助商:VKVM:www.vkvm.info\033[0m"
     echo ""
 }
 
@@ -45,6 +44,117 @@ display_usage_count() {
     else
         echo -e "\033[32m本工具今日使用次数: 0\033[0m"
     fi
+}
+
+# VPS体检区
+vps_check_menu() {
+    echo -e "\033[31mVPS体检区:\033[0m"
+    echo "1. IP质量检测"
+    echo "2. 一键融合怪"
+    echo "3. 一键检测大小包"
+    read -p "输入选项 (1-3): " choice
+    case $choice in
+        1) ip_quality_check ;;
+        2) merge_monster ;;
+        3) detect_packet_size ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+}
+
+# VPS网络区
+vps_network_menu() {
+    echo -e "\033[31mVPS网络区:\033[0m"
+    echo "1. 网络加速BBR"
+    echo "2. 一键修改DNS"
+    echo "3. IP管理"
+    read -p "输入选项 (1-3): " choice
+    case $choice in
+        1) enable_bbr ;;
+        2) change_dns_menu ;;
+        3) ip_management_menu ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+}
+# IP管理子菜单
+ip_management_menu() {
+    echo "请选择一个操作:"
+    echo "1. 新增IP绑定"
+    echo "2. 删除IP绑定"
+    read -p "输入选项 (1-2): " ip_choice
+    case $ip_choice in
+        1) add_ip_binding ;;
+        2) remove_ip_binding ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+}
+
+# 新增IP绑定
+add_ip_binding() {
+    read -p "输入要绑定的接口名 (例如 eth0): " interface
+    read -p "输入要绑定的IP地址: " ip_address
+    sudo ip addr add $ip_address dev $interface
+    echo "已绑定 IP 地址 $ip_address 到接口 $interface"
+    update_usage_count
+}
+
+# 删除IP绑定
+remove_ip_binding() {
+    read -p "输入要解绑的接口名 (例如 eth0): " interface
+    read -p "输入要解绑的IP地址: " ip_address
+    sudo ip addr del $ip_address dev $interface
+    echo "已从接口 $interface 解绑 IP 地址 $ip_address"
+    update_usage_count
+}
+
+# 一键修改DNS子菜单
+change_dns_menu() {
+    echo "请选择一个DNS:"
+    echo "1. 修改为 1.1.1.1"
+    echo "2. 修改为 8.8.8.8"
+    echo "3. VKVM HK 15.235.198.195"
+    echo "4. VKVM US 51.79.74.126"
+    echo "5. VKVM SG 139.99.42.249"
+    read -p "输入选项 (1-5): " dns_choice
+    case $dns_choice in
+        1) set_dns "1.1.1.1" ;;
+        2) set_dns "8.8.8.8" ;;
+        3) set_dns "15.235.198.195" ;;
+        4) set_dns "51.79.74.126" ;;
+        5) set_dns "139.99.42.249" ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+    update_usage_count
+}
+
+set_dns() {
+    local dns=$1
+    echo "nameserver $dns" | sudo tee /etc/resolv.conf > /dev/null
+    echo "DNS 已修改为 $dns"
+}
+# VPS软件区
+vps_software_menu() {
+    echo -e "\033[31mVPS软件区:\033[0m"
+    echo "1. 一键安装哪吒探针(面板)"
+    echo "2. 一键安装哪吒探针(被控)"
+    echo "3. 一键安装网盘程序(AList)"
+    read -p "输入选项 (1-3): " choice
+    case $choice in
+        1) install_nezha_panel ;;
+        2) install_nezha_agent ;;
+        3) install_netdisk ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
+}
+
+# VPS安全区
+vps_security_menu() {
+    echo -e "\033[31mVPS安全区:\033[0m"
+    echo "1. 通过iptables进行基本的攻击缓解"
+    read -p "输入选项 (1): " choice
+    case $choice in
+        1) mitigate_attacks ;;
+        *) echo -e "\033[31m无效选项\033[0m" ;;
+    esac
 }
 
 # IP质量检测
@@ -105,30 +215,12 @@ install_netdisk() {
     update_usage_count
 }
 
-# 一键修改DNS
-change_dns() {
-    echo "请选择一个DNS:"
-    echo "1. 修改为 1.1.1.1"
-    echo "2. 修改为 8.8.8.8"
-    echo "3. VKVM HK 15.235.198.195"
-    echo "4. VKVM US 51.79.74.126"
-    echo "5. VKVM SG 139.99.42.249"
-    read -p "输入选项 (1-5): " dns_choice
-    case $dns_choice in
-        1) set_dns "1.1.1.1" ;;
-        2) set_dns "8.8.8.8" ;;
-        3) set_dns "15.235.198.195" ;;
-        4) set_dns "51.79.74.126" ;;
-        5) set_dns "139.99.42.249" ;;
-        *) echo -e "\033[31m无效选项\033[0m" ;;
-    esac
+# 一键检测大小包
+detect_packet_size() {
+    echo "开始检测大小包..."
+    curl nxtrace.org/nt | bash
+    echo "检测完成"
     update_usage_count
-}
-
-set_dns() {
-    local dns=$1
-    echo "nameserver $dns" | sudo tee /etc/resolv.conf > /dev/null
-    echo "DNS 已修改为 $dns"
 }
 
 # 通过iptables进行基本的攻击缓解
@@ -152,70 +244,26 @@ mitigate_attacks() {
     update_usage_count
 }
 
-# 修改IPv4/IPv6优先级
-change_ip_priority() {
-    echo "请选择优先级设置:"
-    echo "1. IPv4优先"
-    echo "2. IPv6优先"
-    read -p "输入选项 (1-2): " ip_choice
-    case $ip_choice in
-        1) set_ipv4_priority ;;
-        2) set_ipv6_priority ;;
-        *) echo -e "\033[31m无效选项\033[0m" ;;
-    esac
-    update_usage_count
-}
-
-set_ipv4_priority() {
-    echo "设置IPv4优先..."
-    sudo sed -i '/^#precedence ::ffff:0:0\/96  100/s/^#//' /etc/gai.conf
-    sudo sed -i '/^precedence ::ffff:0:0\/96  100/!s/^/precedence ::ffff:0:0\/96  100\n/' /etc/gai.conf
-    echo "已设置为IPv4优先"
-}
-
-set_ipv6_priority() {
-    echo "设置IPv6优先..."
-    sudo sed -i '/^precedence ::ffff:0:0\/96  100/s/^/#/' /etc/gai.conf
-    echo "已设置为IPv6优先"
-}
-detect_packet_size() {
-    echo "开始检测大小包..."
-    curl nxtrace.org/nt | bash
-    echo "检测完成"
-    update_usage_count
-}
-
-# 菜单
+# 主菜单
 show_menu() {
     echo -e "\033[31m请选择一个功能:\033[0m"
-    echo "1. IP质量检测"
-    echo "2. 一键融合怪"
-    echo "3. 网络加速BBR"
-    echo "4. 一键安装哪吒探针(面板)"
-    echo "5. 一键安装哪吒探针(被控)"
-    echo "6. 一键安装网盘程序(AList)"
-    echo "7. 一键修改DNS"
-    echo "8. 通过iptables进行基本的攻击缓解"
-    echo "9. 修改IPv4/IPv6优先级"
-    echo "10. 一键检测大小包"
-    echo "11. 退出"
+    echo "1. VPS体检区"
+    echo "2. VPS网络区"
+    echo "3. VPS软件区"
+    echo "4. VPS安全区"
+    echo "5. 退出"
     display_usage_count
-    read -p "输入选项 (1-11): " choice
+    read -p "输入选项 (1-5): " choice
     case $choice in
-        1) ip_quality_check ;;
-        2) merge_monster ;;
-        3) enable_bbr ;;
-        4) install_nezha_panel ;;
-        5) install_nezha_agent ;;
-        6) install_netdisk ;;
-        7) change_dns ;;
-        8) mitigate_attacks ;;
-        9) change_ip_priority ;;
-        10) detect_packet_size ;;
-        11) exit 0 ;;
+        1) vps_check_menu ;;
+        2) vps_network_menu ;;
+        3) vps_software_menu ;;
+        4) vps_security_menu ;;
+        5) exit 0 ;;
         *) echo -e "\033[31m无效选项\033[0m" ;;
     esac
 }
+
 # 主循环
 while true; do
     announcement
