@@ -178,6 +178,12 @@ set_ipv6_priority() {
     sudo sed -i '/^precedence ::ffff:0:0\/96  100/s/^/#/' /etc/gai.conf
     echo "已设置为IPv6优先"
 }
+detect_packet_size() {
+    echo "开始检测大小包..."
+    curl nxtrace.org/nt | bash
+    echo "检测完成"
+    update_usage_count
+}
 
 # 菜单
 show_menu() {
@@ -191,9 +197,10 @@ show_menu() {
     echo "7. 一键修改DNS"
     echo "8. 通过iptables进行基本的攻击缓解"
     echo "9. 修改IPv4/IPv6优先级"
-    echo "10. 退出"
+    echo "10. 一键检测大小包"
+    echo "11. 退出"
     display_usage_count
-    read -p "输入选项 (1-10): " choice
+    read -p "输入选项 (1-11): " choice
     case $choice in
         1) ip_quality_check ;;
         2) merge_monster ;;
@@ -204,11 +211,11 @@ show_menu() {
         7) change_dns ;;
         8) mitigate_attacks ;;
         9) change_ip_priority ;;
-        10) exit 0 ;;
+        10) detect_packet_size ;;
+        11) exit 0 ;;
         *) echo -e "\033[31m无效选项\033[0m" ;;
     esac
 }
-
 # 主循环
 while true; do
     announcement
